@@ -1,0 +1,90 @@
+﻿@model LoginViewModel
+
+@{
+    ViewData["Title"] = "Log in";
+}
+
+<h1>@ViewData["Title"]</h1>
+<div class="row">
+    <div class="col-md-4">
+        <section>
+            <form id="account" method="post">
+                <h4>Use a local account to log in.</h4>
+                <hr />
+                <div asp-validation-summary="All" class="text-danger"></div>
+                <div>
+                    @if (ViewData.ModelState.ContainsKey("UserNotRegisteredError"))
+                    {
+                        <em>You don't have account yet. <a asp-action="Register">Click here</a> to register</em>
+                    }
+                </div>
+                <div class="form-group">
+                    <label asp-for="Email"></label>
+                    <input asp-for="Email" class="form-control" />
+                    <span asp-validation-for="Email" class="text-danger"></span>
+                </div>
+                <div class="form-group">
+                    <label asp-for="Password"></label>
+                    <input asp-for="Password" class="form-control" />
+                    <span asp-validation-for="Password" class="text-danger"></span>
+                </div>
+                <div class="form-group">
+                    <div class="checkbox">
+                        <label asp-for="RememberMe">
+                            <input asp-for="RememberMe" />
+                            @Html.DisplayNameFor(m => m.RememberMe)
+                        </label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <button type="submit" class="btn btn-primary">Log in</button>
+                </div>
+                <div class="form-group">
+                    <p>
+                        <a id="forgot-password" asp-action="ForgotPassword">Forgot your password?</a>
+                    </p>
+                    <p>
+                        <a asp-action="Register" asp-route-returnUrl="@Model.returnUrl">Register as a new user</a>
+                    </p>
+                </div>
+            </form>
+        </section>
+    </div>
+    <div class="col-md-6 col-md-offset-2">
+        <section>
+            <h4>Use another service to register.</h4>
+            <hr />
+                
+                    <div>
+                        <p>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <a class="btn btn-outline-dark" asp-action="ExternalLogin" asp-route-provider="Google" asp-route-returnUrl="@Model.returnUrl" style="text-transform: none; width: 220px;">
+                                        <img width="20px" style="margin-bottom:3px; margin-right:5px" alt="Google sign-in" src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/53/Google_%22G%22_Logo.svg/512px-Google_%22G%22_Logo.svg.png" />
+                                        Login with Google
+                                    </a>
+                                </div>
+                            </div>
+
+                            <div class="row" style="margin-top: 10px;">
+                                <div class="col-md-6">
+                                    <a class="btn btn-outline-dark" asp-action="ExternalLogin" asp-route-provider="Facebook" asp-route-returnUrl="@Model.returnUrl" style="text-transform: none; width: 220px;">
+                                        <img width="21px" style="margin-bottom:3px; margin-right:5px" alt="Google sign-in" src="https://lh3.googleusercontent.com/proxy/2YujZlzeddbzg5HvPobVFKh0LWye3j3-RpRKRA0D4CZMEcCQW3fW6QDNBa_sCgsyDXhsruamz_1Od6rT7FFFlSvOgRxzluptb8hn3Ymdg6yBLqxIoyDHxb-OHHjm6jZcv9IGx2obBUQ1X01uMhZgWwDQH7yJNIxIXrGWRVNP" />
+                                        Login with Facebook
+                                    </a>
+                                </div>
+                            </div>
+
+                        </p>
+                    </div>
+                
+            
+        </section>
+    </div>
+</div>
+
+
+@section Scripts {
+    
+    <partial name="_ValidationScriptsPartial" />
+}
