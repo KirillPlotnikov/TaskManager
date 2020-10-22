@@ -36,7 +36,7 @@ namespace TaskManager.Controllers
         [HttpGet]
         public IActionResult Register(string returnUrl = null)
         {
-            f
+
             var model = new RegisterViewModel
                 { returnUrl = returnUrl ??= Url.Content("~/") };
             return View(model);
