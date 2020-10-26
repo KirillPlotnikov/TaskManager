@@ -11,6 +11,8 @@ using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Logging;
+using NETCore.MailKit.Core;
+using Org.BouncyCastle.Bcpg;
 using TaskManager.ViewModels;
 
 namespace TaskManager.Controllers
@@ -21,14 +23,15 @@ namespace TaskManager.Controllers
         private readonly SignInManager<IdentityUser> _signInManager;
         private readonly UserManager<IdentityUser> _userManager;
         private readonly ILogger<AccountController> _logger;
-        
+        private readonly IEmailService _emailService;
 
-        public AccountController(SignInManager<IdentityUser> signInManager, UserManager<IdentityUser> userManager, ILogger<AccountController> logger)
+
+        public AccountController(SignInManager<IdentityUser> signInManager, UserManager<IdentityUser> userManager, ILogger<AccountController> logger, IEmailService emailService)
         {
             _signInManager = signInManager;
             _userManager = userManager;
             _logger = logger;
-           
+            this._emailService = emailService;
         }
 
         
@@ -36,9 +39,9 @@ namespace TaskManager.Controllers
         [HttpGet]
         public IActionResult Register(string returnUrl = null)
         {
-
+            returnUrl ??= Url.Content("~/");
             var model = new RegisterViewModel
-                { returnUrl = returnUrl ??= Url.Content("~/") };
+                { returnUrl =  returnUrl};
             return View(model);
         }
 
@@ -46,6 +49,8 @@ namespace TaskManager.Controllers
         public async Task<IActionResult> Register(RegisterViewModel model, string returnUrl = null)
         {
             returnUrl ??= Url.Content("~/");
+
+            
             if (ModelState.IsValid)
             {
                 var user = new IdentityUser { UserName = model.UserName, Email = model.Email };
@@ -56,18 +61,16 @@ namespace TaskManager.Controllers
 
                     var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
                     code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
-                    var callbackUrl = Url.Page(
-                        "/Account/ConfirmEmail",
-                        pageHandler: null,
-                        values: new { area = "Identity", userId = user.Id, code = code, returnUrl = returnUrl },
-                        protocol: Request.Scheme);
+                    var callbackUrl = Url.Action("ConfirmEmail", "Account", new {userId = user.Id, code = code},
+                        Request.Scheme, Request.Host.ToString());
+                      
 
-                    //await _emailSender.SendEmailAsync(model.Email, "Confirm your email",
-                    //    $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
+                    await _emailService.SendAsync(user.Email, "Task Manager - Email confirmation", $"Please <a href={callbackUrl}>click here</a> to confirm your account", isHtml: true);
+                    
 
-                    if (_userManager.Options.SignIn.RequireConfirmedAccount)
+                    if (_userManager.Options.SignIn.RequireConfirmedEmail)
                     {
-                        return RedirectToPage("RegisterConfirmation", new { email = model.Email, returnUrl = returnUrl });
+                        return RedirectToAction("RegisterConfirmation");
                     }
                     else
                     {
@@ -82,11 +85,32 @@ namespace TaskManager.Controllers
             }
 
             // If we got this far, something failed, redisplay form
+            return View(model);
+        }
+
+        public IActionResult RegisterConfirmation()
+        {
             return View();
         }
 
-       
+        public async Task<IActionResult> ConfirmEmail(string userId, string code)
+        {
+            if (userId == null || code == null)
+            {
+                return BadRequest();
+            }
 
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                return NotFound($"Unable to load user with ID '{userId}'.");
+            }
+
+            code = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(code));
+            var result = await _userManager.ConfirmEmailAsync(user, code);
+            ViewData["Message"] = result.Succeeded ? "Thank you for confirming your email." : "Error confirming your email. Please contact our support";
+            return View();
+        }
 
         public IActionResult ForgotPassword()
         {
@@ -134,8 +158,8 @@ namespace TaskManager.Controllers
             }
 
             var result = _userManager.FindByLoginAsync(info.LoginProvider, info.ProviderKey);
-
-            if (result != null)
+            
+            if (result.Result != null)
             {
                 ModelState
                     .AddModelError(string.Empty, "There is a user associated with this account already. Try to log in");
@@ -155,20 +179,40 @@ namespace TaskManager.Controllers
 
                 await _userManager.CreateAsync(user);
                 await _userManager.AddLoginAsync(user, info);
-                await _signInManager.SignInAsync(user, isPersistent: false);
 
-                return LocalRedirect(returnUrl);
+                _logger.LogInformation($"User created a new account with username {user.UserName}.");
+
+                var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+                code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
+                var callbackUrl = Url.Action("ConfirmEmail", "Account", new { userId = user.Id, code = code },
+                    Request.Scheme, Request.Host.ToString());
+
+
+                await _emailService.SendAsync(user.Email, "Task Manager - Email confirmation", $"Please <a href={callbackUrl}>click here</a> to confirm your account", isHtml: true);
+
+
+                if (_userManager.Options.SignIn.RequireConfirmedEmail)
+                {
+                    return RedirectToAction("RegisterConfirmation");
+                }
+                else
+                {
+                    await _signInManager.SignInAsync(user, isPersistent: false);
+                    return LocalRedirect(returnUrl);
+                }
+
             }
 
-            
 
-            // If we cannot find the user email we cannot continue
-            ViewBag.ErrorTitle = $"Email claim not received from: {info.LoginProvider}";
-                ViewBag.ErrorMessage = "Please contact support on Pragim@PragimTech.com";
-            
-                
             return View("Error");
             
+        }
+
+        public IActionResult Login(string returnUrl = null)
+        {
+            var model = new LoginViewModel
+                { returnUrl = returnUrl ??= Url.Content("~/") };
+            return View(model);
         }
 
         [HttpPost]
@@ -200,7 +244,7 @@ namespace TaskManager.Controllers
             }
 
             // If we got this far, something failed, redisplay form
-            return View();
+            return View(model);
         }
 
         [AllowAnonymous]
@@ -253,10 +297,14 @@ namespace TaskManager.Controllers
             {
                 return LocalRedirect(returnUrl);
             }
-            // If there is no record in AspNetUserLogins table, the user may not have
-            // a local account
+            else if (signInResult.IsNotAllowed)
+            {
+                ModelState.AddModelError(string.Empty, "Email is not confirmed yet. Please check your inbox and spam messages.");
+                return View("Login", loginViewModel);
+            }
             else
             {
+
                 // Get the email claim value
                 var email = info.Principal.FindFirstValue(ClaimTypes.Email);
 

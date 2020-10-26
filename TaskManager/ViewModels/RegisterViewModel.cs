@@ -11,7 +11,6 @@ namespace TaskManager.ViewModels
     {
         [Required]
         [Display(Name = "User name")]
-        [RegularExpression("[a-zA-Z0-9.]", ErrorMessage = "User name can only include alphabetical characters, digits and dot.")]
         public string UserName { get; set; }
         [Required]
         [EmailAddress]

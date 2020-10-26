@@ -12,6 +12,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using NETCore.MailKit.Extensions;
+using NETCore.MailKit.Infrastructure.Internal;
 using TaskManager.Additional;
 using TaskManager.Data;
 using TaskManager.Models;
@@ -38,9 +40,16 @@ namespace TaskManager
                     options.User.RequireUniqueEmail = true;
                     options.Password.RequireDigit = false;
                     options.Password.RequireUppercase = false;
-                    
+                    options.Password.RequireNonAlphanumeric = false;
+                    options.User.AllowedUserNameCharacters = ""
+
                 }).AddSignInManager<MySignInManager>()
-                .AddEntityFrameworkStores<TaskDbContext>();
+                .AddEntityFrameworkStores<TaskDbContext>().AddDefaultTokenProviders();
+
+            services.AddMailKit(builder =>
+            {
+                builder.UseMailKit(Configuration.GetSection("MailOptions").Get<MailKitOptions>());
+            });
 
             services.ConfigureApplicationCookie(options => {
                 options.LoginPath = new PathString("/Account/Login");
