@@ -41,7 +41,6 @@ namespace TaskManager
                     options.Password.RequireDigit = false;
                     options.Password.RequireUppercase = false;
                     options.Password.RequireNonAlphanumeric = false;
-                    options.User.AllowedUserNameCharacters = ""
 
                 }).AddSignInManager<MySignInManager>()
                 .AddEntityFrameworkStores<TaskDbContext>().AddDefaultTokenProviders();
@@ -90,7 +89,7 @@ namespace TaskManager
             {
                 endpoints.MapControllerRoute(
                     name: "default",
-                    pattern: "{controller=Home}/{action=Index}/{id?}");
+                    pattern: "{controller=Tasks}/{action=Index}/{id?}");
             });
         }
     }

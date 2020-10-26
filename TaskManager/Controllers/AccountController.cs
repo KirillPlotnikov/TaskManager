@@ -88,11 +88,13 @@ namespace TaskManager.Controllers
             return View(model);
         }
 
+        [HttpGet]
         public IActionResult RegisterConfirmation()
         {
             return View();
         }
 
+        [HttpGet]
         public async Task<IActionResult> ConfirmEmail(string userId, string code)
         {
             if (userId == null || code == null)
@@ -112,11 +114,8 @@ namespace TaskManager.Controllers
             return View();
         }
 
-        public IActionResult ForgotPassword()
-        {
-            return null;
-        }
 
+        [HttpGet]
         public IActionResult ExternalRegister(string provider, string returnUrl)
         {
             returnUrl ??= Url.Content("~/");
@@ -208,6 +207,7 @@ namespace TaskManager.Controllers
             
         }
 
+        [HttpGet]
         public IActionResult Login(string returnUrl = null)
         {
             var model = new LoginViewModel
@@ -248,6 +248,7 @@ namespace TaskManager.Controllers
         }
 
         [AllowAnonymous]
+        [HttpGet]
         public IActionResult ExternalLogin(string provider, string returnUrl)
         {
             returnUrl ??= Url.Content("~/");
@@ -315,12 +316,53 @@ namespace TaskManager.Controllers
                     return View("Login", loginViewModel);
                 }
 
-                // If we cannot find the user email we cannot continue
-                ViewBag.ErrorTitle = $"Email claim not received from: {info.LoginProvider}";
-                ViewBag.ErrorMessage = "Please contact support on Pragim@PragimTech.com";
+              
 
                 return View("Error");
             }
+        }
+
+        [HttpGet]
+        public IActionResult ForgotPassword()
+        {
+            return View();
+        }
+
+
+        [HttpPost]
+        public async Task<IActionResult> ForgotPassword(ForgotPasswordViewModel model)
+        {
+            if (ModelState.IsValid)
+            {
+                var user = await _userManager.FindByEmailAsync(model.Email);
+                if (user == null || !(await _userManager.IsEmailConfirmedAsync(user)))
+                {
+                    // Don't reveal that the user does not exist or is not confirmed
+                    return RedirectToAction("ForgotPasswordConfirmation");
+                }
+
+                var code = await _userManager.GeneratePasswordResetTokenAsync(user);
+                code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
+
+                var callbackUrl = Url.Action("ResetPassword", "Account", new { userId = user.Id, code = code },
+                    Request.Scheme, Request.Host.ToString());
+
+
+                await _emailService.SendAsync(user.Email, "Task Manager - Password reset", $"Please <a href={callbackUrl}>click here</a> to reset your password", isHtml: true);
+
+            }
+        }
+
+        [HttpGet]
+        public IActionResult ForgotPasswordConfirmation()
+        {
+            return View();
+        }
+
+        [HttpGet]
+        public IActionResult ResetPassword()
+        {
+            return View();
         }
     }
 }
