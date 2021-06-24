@@ -39,7 +39,7 @@ namespace TaskManager.Data
                 var tasks = new Models.Task[]
                 {
                 new Models.Task {Title = "Some title", Note = "Some note", CreationTime = DateTime.Now, LastEditedTime = DateTime.Now, HasToBeDoneTime = DateTime.Now.AddDays(5), UserId = newUser.Id},
-                new Models.Task {Title = "Some good title", Note = "Some good note", CreationTime = DateTime.Now, LastEditedTime = DateTime.Now, HasToBeDoneTime = DateTime.Now.AddDays(7),UserId = newUser.Id},
+                new Models.Task {Title = "Some great title", Note = "Some good note", CreationTime = DateTime.Now, LastEditedTime = DateTime.Now, HasToBeDoneTime = DateTime.Now.AddDays(7),UserId = newUser.Id},
                 };
 
                 await context.Tasks.AddRangeAsync(tasks);
