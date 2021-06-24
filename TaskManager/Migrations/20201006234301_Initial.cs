@@ -100,20 +100,7 @@ namespace TaskManager.Migrations
                                     
                                 END");
 
-            migrationBuilder.CreateIndex(
-                name: "IX_Entities_TaskId",
-                table: "Entities",
-                column: "TaskId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Entities_CategoryId",
-                table: "Entities",
-                column: "CategoryId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_TaskTags_TagId",
-                table: "TaskTags",
-                column: "TagId");
+            
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)
@@ -123,6 +110,7 @@ namespace TaskManager.Migrations
 
             migrationBuilder.DropTable(
                 name: "Entities");
+            migrationBuilder.Sql(@"DROP TRIGGER [DELETE_Tag];");
         }
     }
 }

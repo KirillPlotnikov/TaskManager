@@ -22,7 +22,7 @@ namespace TaskManager.Additional
                 return SignInResult.Failed;
             }
 
-            return await PasswordSignInAsync(user, password, isPersistent, lockoutOnFailure);
+            return await base.PasswordSignInAsync(user, password, isPersistent, lockoutOnFailure);
         }
     }
 }

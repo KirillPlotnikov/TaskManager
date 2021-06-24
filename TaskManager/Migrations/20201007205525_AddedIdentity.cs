@@ -278,6 +278,8 @@ namespace TaskManager.Migrations
             migrationBuilder.DropColumn(
                 name: "UserId",
                 table: "Entities");
+
+            migrationBuilder.Sql(@"DROP TRIGGER [DELETE_User];");
         }
     }
 }

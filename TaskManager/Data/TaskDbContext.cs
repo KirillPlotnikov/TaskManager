@@ -26,7 +26,7 @@ namespace TaskManager.Data
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<TaskTag>().HasKey(c => new { c.TaskId, c.TagId });
-            
+
             base.OnModelCreating(modelBuilder);
         }
         
